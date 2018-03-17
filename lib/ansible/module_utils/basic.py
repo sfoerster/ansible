@@ -71,7 +71,6 @@ import shutil
 import stat
 import tempfile
 import traceback
-import grp
 import pwd
 import platform
 import errno
@@ -79,6 +78,12 @@ import datetime
 from collections import deque
 from collections import Mapping, MutableMapping, Sequence, MutableSequence, Set, MutableSet
 from itertools import chain, repeat
+
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 try:
     import syslog
@@ -1206,11 +1211,14 @@ class AnsibleModule(object):
         try:
             gid = int(group)
         except ValueError:
-            try:
-                gid = grp.getgrnam(group).gr_gid
-            except KeyError:
-                path = to_text(b_path)
-                self.fail_json(path=path, msg='chgrp failed: failed to look up group %s' % group)
+            path = to_text(b_path)
+            if HAS_GRP:
+                try:
+                    gid = grp.getgrnam(group).gr_gid
+                except KeyError:
+                    self.fail_json(path=path, msg='chgrp failed: failed to look up group %s' % group)
+            else:
+                return changed
 
         if orig_gid != gid:
             if diff is not None:
@@ -1544,10 +1552,14 @@ class AnsibleModule(object):
                 user = pwd.getpwuid(uid)[0]
             except KeyError:
                 user = str(uid)
-            try:
-                group = grp.getgrgid(gid)[0]
-            except KeyError:
-                group = str(gid)
+            
+            group = str(gid)
+            if HAS_GRP:
+                try:
+                    group = grp.getgrgid(gid)[0]
+                except KeyError:
+                    pass
+
             kwargs['owner'] = user
             kwargs['group'] = group
             st = os.lstat(b_path)
