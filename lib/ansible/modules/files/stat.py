@@ -363,10 +363,15 @@ stat:
 '''
 
 import errno
-import grp
 import os
 import pwd
 import stat
+
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 # import module snippets
 from ansible.module_utils.basic import AnsibleModule

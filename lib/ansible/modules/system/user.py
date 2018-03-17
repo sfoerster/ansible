@@ -220,7 +220,6 @@ EXAMPLES = '''
     expires: 1422403387
 '''
 
-import grp
 import os
 import platform
 import pwd
@@ -230,6 +229,12 @@ import time
 
 from ansible.module_utils._text import to_native
 from ansible.module_utils.basic import load_platform_subclass, AnsibleModule
+
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 try:
     import spwd
@@ -532,6 +537,10 @@ class User(object):
         return self.execute_command(cmd)
 
     def group_exists(self, group):
+        
+        if not HAS_GRP:
+            return False
+        
         try:
             # Try group as a gid first
             grp.getgrgid(int(group))
@@ -544,7 +553,7 @@ class User(object):
                 return False
 
     def group_info(self, group):
-        if not self.group_exists(group):
+        if not self.group_exists(group) or not HAS_GRP:
             return False
         try:
             # Try group as a gid first
@@ -567,6 +576,10 @@ class User(object):
     def user_group_membership(self, exclude_primary=True):
         ''' Return a list of groups the user belongs to '''
         groups = []
+        
+        if not HAS_GRP:
+            return groups
+
         info = self.get_pwd_info()
         for group in grp.getgrall():
             if self.name in group.gr_mem:
@@ -1601,6 +1614,10 @@ class DarwinUser(User):
         '''Convert SELF.GROUP to is stringed numerical value suitable for dscl.'''
         if self.group is None:
             self.group = 'nogroup'
+        
+        if not HAS_GRP:
+            return
+        
         try:
             self.group = grp.getgrnam(self.group).gr_gid
         except KeyError:

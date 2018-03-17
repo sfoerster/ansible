@@ -122,7 +122,6 @@ EXAMPLES = r'''
 import binascii
 import codecs
 import datetime
-import grp
 import os
 import platform
 import pwd
@@ -135,6 +134,12 @@ from zipfile import ZipFile, BadZipfile
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_bytes, to_native, to_text
+
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 try:  # python 3.3+
     from shlex import quote
@@ -316,7 +321,7 @@ class ZipArchive(object):
 
         # Get future group ownership
         fut_group = fut_gid = None
-        if self.file_args['group']:
+        if self.file_args['group'] and HAS_GRP:
             try:
                 tgr = grp.getgrnam(self.file_args['group'])
             except:

@@ -172,13 +172,18 @@ examined:
 '''
 
 import fnmatch
-import grp
 import os
 import pwd
 import re
 import stat
 import sys
 import time
+
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 from ansible.module_utils.basic import AnsibleModule
 

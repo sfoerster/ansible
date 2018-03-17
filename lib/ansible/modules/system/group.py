@@ -54,7 +54,11 @@ EXAMPLES = '''
     state: present
 '''
 
-import grp
+try:
+    import grp
+    HAS_GRP = True
+except ImportError:
+    HAS_GRP = False
 
 from ansible.module_utils.basic import AnsibleModule, load_platform_subclass
 
@@ -120,6 +124,10 @@ class Group(object):
         return self.execute_command(cmd)
 
     def group_exists(self):
+        
+        if not HAS_GRP:
+            return False
+        
         try:
             if grp.getgrnam(self.name):
                 return True
@@ -129,6 +137,10 @@ class Group(object):
     def group_info(self):
         if not self.group_exists():
             return False
+
+        if not HAS_GRP:
+            return False
+
         try:
             info = list(grp.getgrnam(self.name))
         except KeyError:
