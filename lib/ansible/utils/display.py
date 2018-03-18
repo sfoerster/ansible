@@ -31,7 +31,12 @@ import textwrap
 import time
 
 from struct import unpack, pack
-from termios import TIOCGWINSZ
+
+try:
+    from termios import TIOCGWINSZ
+    HAS_TERMIOS = True
+except ImportError:
+    HAS_TERMIOS = False
 
 from ansible import constants as C
 from ansible.errors import AnsibleError
@@ -351,7 +356,7 @@ class Display:
         return encoding
 
     def _set_column_width(self):
-        if os.isatty(0):
+        if os.isatty(0) and HAS_TERMIOS:
             tty_size = unpack('HHHH', fcntl.ioctl(0, TIOCGWINSZ, pack('HHHH', 0, 0, 0, 0)))[1]
         else:
             tty_size = 0
